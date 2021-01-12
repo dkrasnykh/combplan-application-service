@@ -46,15 +46,19 @@ public class RequestConsumer {
         KafkaConsumer<Long, String> consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Collections.singletonList("application-service.request"));
 
-        while (true) {
-            ConsumerRecords<Long, String> records = consumer.poll(Duration.ofMillis(1000));
-            for (ConsumerRecord<Long, String> record : records) {
-                String value = record.value();
-                log.info("=> consumed {}", value);
-                RequestDto requestDto = readValue(value);
-                requestService.createRequest(requestDto);
+        try {
+            while (true) {
+                ConsumerRecords<Long, String> records = consumer.poll(Duration.ofMillis(1000));
+                for (ConsumerRecord<Long, String> record : records) {
+                    String value = record.value();
+                    log.info("=> consumed {}", value);
+                    RequestDto requestDto = readValue(value);
+                    requestService.createRequest(requestDto);
+                }
+                consumer.commitSync();
             }
-            consumer.commitSync();
+        } finally {
+            consumer.close();
         }
     }
 
