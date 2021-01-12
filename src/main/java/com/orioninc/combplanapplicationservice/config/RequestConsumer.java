@@ -55,7 +55,6 @@ public class RequestConsumer {
                     RequestDto requestDto = readValue(value);
                     requestService.createRequest(requestDto);
                 }
-                consumer.commitSync();
             }
         } finally {
             consumer.close();
