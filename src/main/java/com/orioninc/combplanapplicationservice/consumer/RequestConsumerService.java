@@ -1,51 +1,41 @@
-package com.orioninc.combplanapplicationservice.config;
+package com.orioninc.combplanapplicationservice.consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orioninc.combplanapplicationservice.dto.RequestDto;
 import com.orioninc.combplanapplicationservice.service.RequestService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.LongDeserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.Collections;
-import java.util.Properties;
 
 @Slf4j
-@Component
-public class RequestConsumer {
-    private final ObjectMapper objectMapper;
+@Service
+public class RequestConsumerService {
+    private final ObjectMapper mapper;
     private final RequestService requestService;
+    private final KafkaConsumer<Long, String> consumer;
 
-    @Value("${kafka.group.id}")
-    private String kafkaGroupId;
+    @Value("${kafka.topic.request}")
+    private String topic;
 
     @Autowired
-    public RequestConsumer(ObjectMapper objectMapper, RequestService requestService) {
-        this.objectMapper = objectMapper;
+    public RequestConsumerService(ObjectMapper mapper, RequestService requestService, KafkaConsumer<Long, String> consumer) {
+        this.mapper = mapper;
         this.requestService = requestService;
+        this.consumer = consumer;
     }
 
     @PostConstruct
     public void consume() {
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaGroupId);
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true);
-        KafkaConsumer<Long, String> consumer = new KafkaConsumer<>(props);
-        consumer.subscribe(Collections.singletonList("application-service.request"));
-
+        consumer.subscribe(Collections.singletonList(topic));
         try {
             while (true) {
                 ConsumerRecords<Long, String> records = consumer.poll(Duration.ofMillis(1000));
@@ -63,7 +53,7 @@ public class RequestConsumer {
 
     private RequestDto readValue(String value) {
         try {
-            return objectMapper.readValue(value, RequestDto.class);
+            return mapper.readValue(value, RequestDto.class);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             throw new RuntimeException("Writing value to RequestDto failed: " + value);
