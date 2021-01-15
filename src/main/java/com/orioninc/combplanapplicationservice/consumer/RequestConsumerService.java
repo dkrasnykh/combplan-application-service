@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -42,10 +41,6 @@ public class RequestConsumerService {
 
     @PostConstruct
     public void consume() {
-        startConsuming();
-    }
-
-    public void startConsuming() {
         executorService = Executors.newSingleThreadExecutor();
         Runnable consumerThread = getConsumerThread(properties);
         executorService.submit(consumerThread);
@@ -74,12 +69,6 @@ public class RequestConsumerService {
                 }
             }
         };
-    }
-
-    public void stopConsuming() throws InterruptedException {
-        doneConsuming = true;
-        executorService.awaitTermination(10000, TimeUnit.MILLISECONDS);
-        executorService.shutdownNow();
     }
 
     private RequestDto readValue(String value) {
