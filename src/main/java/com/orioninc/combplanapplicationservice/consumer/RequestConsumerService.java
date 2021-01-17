@@ -26,8 +26,6 @@ public class RequestConsumerService {
     private final ObjectMapper mapper;
     private final RequestService requestService;
     private final Properties properties;
-    private volatile boolean doneConsuming = false;
-    private ExecutorService executorService;
 
     @Value("${kafka.topic.request}")
     private String topic;
@@ -41,7 +39,7 @@ public class RequestConsumerService {
 
     @PostConstruct
     public void consume() {
-        executorService = Executors.newSingleThreadExecutor();
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
         Runnable consumerThread = getConsumerThread(properties);
         executorService.submit(consumerThread);
     }
@@ -52,7 +50,7 @@ public class RequestConsumerService {
             try {
                 consumer = new KafkaConsumer<>(properties);
                 consumer.subscribe(Collections.singletonList(topic));
-                while (!doneConsuming) {
+                while (true) {
                     ConsumerRecords<Long, String> records = consumer.poll(Duration.ofMillis(5000));
                     for (ConsumerRecord<Long, String> record : records) {
                         String value = record.value();
