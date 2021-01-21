@@ -6,6 +6,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class RequestDto extends AbstractDto {
-    private String title;
-    private String description;
+    private RequestStatus status;
+    private OrganizationDto organization;
+    private UserDto applicant;
+    private PublicationDto publication;
 }
